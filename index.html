@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Admission">
+  <title>Last Admission Summary Offline</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Last Admission Summary</h1>
+      <div class="privacy-badge"><span></span>完全離線・資料只存此裝置</div>
+    </div>
+    <div class="header-actions">
+      <button id="newPatientBtn" class="secondary">＋ 新病人</button>
+      <button id="savePatientBtn" class="primary">儲存</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="patient-sidebar">
+      <div class="sidebar-head">
+        <strong>病人清單</strong>
+        <input id="patientSearchInput" type="search" placeholder="搜尋床號／姓名／病歷號">
+      </div>
+      <div id="patientList" class="patient-list"></div>
+      <div class="backup-actions">
+        <button id="exportBtn">匯出備份</button>
+        <label class="button-label">匯入備份<input id="importInput" type="file" accept="application/json,.json"></label>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <div class="patient-card">
+        <div class="section-title">
+          <span>病人基本資料</span>
+          <span id="saveState" class="save-state">尚未儲存</span>
+        </div>
+        <div class="patient-grid">
+          <label>床號<input id="bedInput" autocomplete="off" placeholder="09B-10-02"></label>
+          <label>姓名<input id="nameInput" autocomplete="off" placeholder="病人姓名"></label>
+          <label>病歷號<input id="mrnInput" inputmode="numeric" autocomplete="off" placeholder="病歷號"></label>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="頁面分區">
+        <button class="tab active" data-tab="summaryPanel">資訊統整</button>
+        <button class="tab" data-tab="sourcePanel">資料來源</button>
+        <button class="tab" data-tab="settingsPanel">項目設定</button>
+      </nav>
+
+      <section id="summaryPanel" class="tab-panel active">
+        <div class="two-column">
+          <fieldset class="checklist-card">
+            <legend>病人抱怨 Symptoms</legend>
+            <div id="complaintChecklist" class="checklist"></div>
+            <label>其他補充<textarea id="complaintOther" rows="3" placeholder="例如：headache for one month"></textarea></label>
+          </fieldset>
+
+          <fieldset class="checklist-card">
+            <legend>PE findings</legend>
+            <div id="peChecklist" class="checklist"></div>
+            <label>其他補充<textarea id="peOther" rows="3" placeholder="例如：neck stiffness"></textarea></label>
+          </fieldset>
+        </div>
+
+        <div class="form-card">
+          <div class="two-column">
+            <label>入院原因
+              <textarea id="admissionReasonInput" rows="4" placeholder="可輸入中文或英文，例如：接受化學治療"></textarea>
+            </label>
+            <label>Lab 原始資料
+              <textarea id="labInput" rows="4" placeholder="貼上 Lab，會自動挑出常用異常項目"></textarea>
+            </label>
+          </div>
+          <label>最近病況／補充資料
+            <textarea id="recentStatusInput" rows="5" placeholder="重要病史、治療、目前狀況與後續計畫"></textarea>
+          </label>
+          <label>異常 Lab 重點
+            <textarea id="labSummaryInput" rows="3" placeholder="可自動產生，也可以自行修改"></textarea>
+          </label>
+        </div>
+
+        <div class="result-card">
+          <div class="section-title">
+            <span>統整結果</span>
+            <div class="inline-actions">
+              <button id="clearBtn">清空本次內容</button>
+              <button id="summarizeBtn" class="primary">統整資訊</button>
+              <button id="copyBtn">複製</button>
+            </div>
+          </div>
+          <textarea id="summaryOutput" rows="10" spellcheck="false" placeholder="按「統整資訊」產生條列文字"></textarea>
+        </div>
+      </section>
+
+      <section id="sourcePanel" class="tab-panel">
+        <div class="source-grid">
+          <div class="form-card">
+            <div class="section-title"><span>病歷摘要／來源文字</span></div>
+            <textarea id="sourceTextInput" rows="18" placeholder="直接貼上病歷摘要、上次住院重點或其他來源文字"></textarea>
+          </div>
+          <div class="form-card">
+            <div class="section-title">
+              <span>PDF 附件</span>
+              <button id="removePdfBtn" class="danger-text" hidden>移除 PDF</button>
+            </div>
+            <label class="upload-box">
+              <strong>選擇平板上的 PDF</strong>
+              <span>檔案只會儲存在此裝置，不會上傳。</span>
+              <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+            </label>
+            <div id="pdfInfo" class="pdf-info">尚未加入 PDF</div>
+            <iframe id="pdfPreview" class="pdf-preview" title="PDF 預覽" hidden></iframe>
+          </div>
+        </div>
+      </section>
+
+      <section id="settingsPanel" class="tab-panel">
+        <div class="settings-card">
+          <div class="section-title">
+            <span>編輯 Symptoms 與 PE 項目</span>
+            <button id="saveSettingsBtn" class="primary">儲存並套用</button>
+          </div>
+          <p class="hint">一行一項。下方可設定新病人建立時的預設值；「未選」代表不預先勾選。</p>
+          <div class="two-column">
+            <div>
+              <label>Symptoms 項目<textarea id="complaintItemsEditor" rows="12"></textarea></label>
+              <div id="complaintDefaultsEditor" class="defaults-editor"></div>
+            </div>
+            <div>
+              <label>PE 項目<textarea id="peItemsEditor" rows="12"></textarea></label>
+              <div id="peDefaultsEditor" class="defaults-editor"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
