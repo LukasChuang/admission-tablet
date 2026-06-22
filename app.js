@@ -24,10 +24,15 @@
     patients: [],
     current: null,
     settings: structuredClone(DEFAULT_SETTINGS),
+    cloud: { clientId: "", folderName: "Admission Summary" },
     defaultDraft: { complaint: {}, pe: {} },
     dirty: false,
     pdfUrl: ""
   };
+
+  const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+  const googleAuth = { client: null, clientId: "", token: "", expiresAt: 0 };
+  let gisLoadPromise = null;
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -54,6 +59,9 @@
     peEditor: $("peItemsEditor"),
     complaintDefaults: $("complaintDefaultsEditor"),
     peDefaults: $("peDefaultsEditor"),
+    cloudClientId: $("cloudClientIdInput"),
+    cloudFolder: $("cloudFolderInput"),
+    uploadBtn: $("uploadBtn"),
     saveState: $("saveState"),
     toast: $("toast")
   };
@@ -90,6 +98,10 @@
   const getSettings = () => dbRequest(SETTINGS_STORE, "readonly", (store) => store.get("clinical"));
   const putSettings = (settings) => dbRequest(
     SETTINGS_STORE, "readwrite", (store) => store.put({ key: "clinical", value: settings })
+  );
+  const getCloud = () => dbRequest(SETTINGS_STORE, "readonly", (store) => store.get("cloud"));
+  const putCloud = (cloud) => dbRequest(
+    SETTINGS_STORE, "readwrite", (store) => store.put({ key: "cloud", value: cloud })
   );
 
   function newId() {
@@ -524,6 +536,138 @@
     showToast("備份已匯入");
   }
 
+  function renderCloud() {
+    els.cloudClientId.value = state.cloud.clientId || "";
+    els.cloudFolder.value = state.cloud.folderName || "Admission Summary";
+  }
+
+  async function saveCloudSettings() {
+    state.cloud = {
+      clientId: els.cloudClientId.value.trim(),
+      folderName: els.cloudFolder.value.trim() || "Admission Summary"
+    };
+    await putCloud(state.cloud);
+    showToast("雲端設定已儲存在此裝置");
+  }
+
+  function loadGoogleIdentity() {
+    if (window.google?.accounts?.oauth2) return Promise.resolve();
+    if (gisLoadPromise) return gisLoadPromise;
+    gisLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        gisLoadPromise = null;
+        reject(new Error("無法載入 Google 登入元件（需連線）"));
+      };
+      document.head.appendChild(script);
+    });
+    return gisLoadPromise;
+  }
+
+  function requestAccessToken(clientId) {
+    if (googleAuth.token && Date.now() < googleAuth.expiresAt - 60000) {
+      return Promise.resolve(googleAuth.token);
+    }
+    return new Promise((resolve, reject) => {
+      if (!googleAuth.client || googleAuth.clientId !== clientId) {
+        googleAuth.clientId = clientId;
+        googleAuth.client = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: DRIVE_SCOPE,
+          callback: () => {}
+        });
+      }
+      googleAuth.client.callback = (response) => {
+        if (response.error) {
+          reject(new Error(`Google 授權失敗：${response.error}`));
+          return;
+        }
+        googleAuth.token = response.access_token;
+        googleAuth.expiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
+        resolve(response.access_token);
+      };
+      googleAuth.client.requestAccessToken();
+    });
+  }
+
+  async function ensureDriveFolder(token, folderName) {
+    const query = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g, "\\'")}' and trashed=false`;
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&spaces=drive`;
+    const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!listRes.ok) throw new Error(`查詢資料夾失敗（${listRes.status}）`);
+    const listData = await listRes.json();
+    if (listData.files?.length) return listData.files[0].id;
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files?fields=id", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: folderName, mimeType: "application/vnd.google-apps.folder" })
+    });
+    if (!createRes.ok) throw new Error(`建立資料夾失敗（${createRes.status}）`);
+    return (await createRes.json()).id;
+  }
+
+  async function uploadTextToDrive(token, folderId, filename, text) {
+    const boundary = `admission-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const metadata = { name: filename, parents: [folderId], mimeType: "text/plain" };
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+      `${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n` +
+      `${text}\r\n--${boundary}--`;
+    const res = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+        body
+      }
+    );
+    if (!res.ok) throw new Error(`上傳失敗（${res.status}）`);
+    return res.json();
+  }
+
+  function buildUploadName() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const base = [els.bed.value, els.name.value, els.mrn.value]
+      .map((part) => part.trim()).filter(Boolean).join("_")
+      .replace(/[\\/:*?"<>|]+/g, "-") || "summary";
+    return `${base}_${stamp}.txt`;
+  }
+
+  async function uploadToCloud() {
+    if (!els.output.value.trim()) els.output.value = buildSummary();
+    const text = els.output.value.trim();
+    if (!text) { showToast("沒有可上傳的內容"); return; }
+    if (!state.cloud.clientId) {
+      showToast("請先到「項目設定」填入 Google Client ID");
+      return;
+    }
+    if (!navigator.onLine) { showToast("目前離線，連線後才能上傳"); return; }
+    const previousLabel = els.uploadBtn.textContent;
+    els.uploadBtn.disabled = true;
+    els.uploadBtn.textContent = "上傳中…";
+    try {
+      await loadGoogleIdentity();
+      const token = await requestAccessToken(state.cloud.clientId);
+      const folderId = await ensureDriveFolder(token, state.cloud.folderName || "Admission Summary");
+      const result = await uploadTextToDrive(token, folderId, buildUploadName(), text);
+      showToast(`已上傳到 Google Drive：${result.name}`);
+    } catch (error) {
+      googleAuth.token = "";
+      googleAuth.expiresAt = 0;
+      showToast(`上傳失敗：${error.message}`);
+    } finally {
+      els.uploadBtn.disabled = false;
+      els.uploadBtn.textContent = previousLabel;
+    }
+  }
+
   function bindEvents() {
     document.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
@@ -532,6 +676,8 @@
     $("newPatientBtn").addEventListener("click", createPatient);
     $("savePatientBtn").addEventListener("click", saveCurrent);
     $("saveSettingsBtn").addEventListener("click", saveSettings);
+    $("saveCloudBtn").addEventListener("click", saveCloudSettings);
+    els.uploadBtn.addEventListener("click", uploadToCloud);
     $("summarizeBtn").addEventListener("click", () => {
       els.output.value = buildSummary();
       markDirty();
@@ -579,7 +725,7 @@
       event.target.value = "";
     });
     document.querySelectorAll("input, textarea").forEach((element) => {
-      if ([els.patientSearch, els.pdfInput, els.complaintEditor, els.peEditor, $("importInput")].includes(element)) return;
+      if ([els.patientSearch, els.pdfInput, els.complaintEditor, els.peEditor, els.cloudClientId, els.cloudFolder, $("importInput")].includes(element)) return;
       element.addEventListener("input", markDirty);
     });
     window.addEventListener("beforeunload", (event) => {
@@ -593,8 +739,11 @@
     state.db = await openDatabase();
     const savedSettings = await getSettings();
     if (savedSettings?.value) state.settings = savedSettings.value;
+    const savedCloud = await getCloud();
+    if (savedCloud?.value) state.cloud = { ...state.cloud, ...savedCloud.value };
     state.patients = await getAllPatients();
     renderSettings();
+    renderCloud();
     bindEvents();
     if (state.patients.length) {
       loadPatient([...state.patients].sort((a, b) => b.updatedAt - a.updatedAt)[0]);

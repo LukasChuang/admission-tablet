@@ -95,6 +95,7 @@
               <button id="clearBtn">清空本次內容</button>
               <button id="summarizeBtn" class="primary">統整資訊</button>
               <button id="copyBtn">複製</button>
+              <button id="uploadBtn">上傳雲端</button>
             </div>
           </div>
           <textarea id="summaryOutput" rows="10" spellcheck="false" placeholder="按「統整資訊」產生條列文字"></textarea>
@@ -140,6 +141,16 @@
               <div id="peDefaultsEditor" class="defaults-editor"></div>
             </div>
           </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="section-title">
+            <span>雲端上傳設定（Google Drive）</span>
+            <button id="saveCloudBtn" class="primary">儲存設定</button>
+          </div>
+          <p class="hint">填入你自己的 Google OAuth 用戶端 ID 後，「資訊統整」分頁的「上傳雲端」就能把統整文字存到你 Google Drive 的指定資料夾。資料只會傳到你的 Google 帳號，不會經過其他伺服器；上傳需連線。</p>
+          <label>Google OAuth Client ID<input id="cloudClientIdInput" autocomplete="off" placeholder="xxxxxxxxxx.apps.googleusercontent.com"></label>
+          <label>目標資料夾名稱<input id="cloudFolderInput" autocomplete="off" placeholder="Admission Summary"></label>
         </div>
       </section>
     </section>

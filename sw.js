@@ -1,4 +1,4 @@
-const CACHE_NAME = "last-admission-offline-v1";
+const CACHE_NAME = "last-admission-offline-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,6 +25,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // 只快取本站資源；Google 登入／Drive API 等跨網域請求一律直接連網路。
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
       const copy = response.clone();
