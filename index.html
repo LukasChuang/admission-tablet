@@ -53,6 +53,7 @@
       <nav class="tabs" aria-label="頁面分區">
         <button class="tab active" data-tab="summaryPanel">資訊統整</button>
         <button class="tab" data-tab="sourcePanel">資料來源</button>
+        <button class="tab" data-tab="nePanel">NE</button>
         <button class="tab" data-tab="settingsPanel">項目設定</button>
       </nav>
 
@@ -121,6 +122,20 @@
             <div id="pdfInfo" class="pdf-info">尚未加入 PDF</div>
             <iframe id="pdfPreview" class="pdf-preview" title="PDF 預覽" hidden></iframe>
           </div>
+        </div>
+      </section>
+
+      <section id="nePanel" class="tab-panel">
+        <div class="form-card">
+          <div class="section-title">
+            <span>Neurological examinations</span>
+            <div class="inline-actions">
+              <button id="neResetBtn">重設為預設模板</button>
+              <button id="neCopyBtn" class="primary">複製 NE</button>
+            </div>
+          </div>
+          <p class="hint">預設帶入常規神經學檢查模板，直接在下方修改數值即可。內容會隨每位病人一起儲存在此裝置。</p>
+          <textarea id="neuroInput" class="neuro-input" rows="42" spellcheck="false"></textarea>
         </div>
       </section>
 

@@ -19,6 +19,84 @@
     defaults: { complaint: {}, pe: {} }
   };
 
+  const NEURO_TEMPLATE = `8. Neurological examinations
+*Cranial nerve
+CN I :   Not performed, anosmia(-), hyposmia(-), hyperosmia(-), olfactory agnosia(-)
+CN II:   Visual acuity: intact(+), Visual fields: confrontation test: intact
+CN III, IV, VI:
+         Pupil: isocoric R/L: 3mm/3mm, light reflex R/L: +/+
+         EOM:
+          0    0          0    0
+      0 --+----+-- 0  0 --+----+-- 0
+          0    0          0    0
+         Primary gaze: at neutral positions without diplopia; Convergence: fair
+         Binocular diplopia(-)
+         Pursuit: smooth, Saccade: no dysmetria
+CN V:    Corneal reflex(+/+)
+         Facial sensation: intact and symmetric to pinprick and light touch
+         Masseter R/L: full, Temporalis R/L: full
+CN VII : No/Central/Peripheral type facial palsy
+         Nasolabial fold shallowing(-)
+CN VIII: Bilateral hearing ability: fair by finger rubbing test
+         Spontaneous nystagmus(-); positional nystagmus(-)
+CN IX,X: Uvula deviation(-), Gag reflex R/L(+/+)
+CN XI:   SCM: weakness(-), atrophy(-), 5/5
+         Trapezius: weakness(-), atrophy(-), 5/5
+CN XII:  Tongue protruding: deviation(-), atrophy(-), fasciculation(-)
+
+*Motor
+Motor inspection:
+muscle wasting(-), fasciculation(-), muscle cramps(-), dystonia(-)
+
+Muscle tone:
+spasticity(-), rigidity(-)
+
+Muscle power:(R/L)
+Upper limbs
+ Right: shoulder 5   elbow flexion/extension  5/5     wrist flexion/extension   5/5    grasp 5
+ Left:  shoulder 5    elbow flexion/extension 5/5       wrist flexion/extension 5/5    grasp 5
+Lower limbs
+ Right: hip flexion 5 knee flexion/extension 5/5
+ ankle dorsiflextion/plantarflextion 5/3 big toe 3
+ Left:  hip flexion 5  knee flexion/extension 5/5
+ ankle dorsiflextion/plantarflextion 5/3 big toe 2
+
+DTR
+  Right: biceps: ++, triceps: ++, brachioradialis: +, knee: ++, ankle: trace
+  Left:  biceps: ++, triceps: ++, brachioradialis: +, knee: ++, ankle: trace
+Soft weakness sign: pronator drift test: L/R: -/-
+
+Other reflexes: (R/L)
+Barbinski: flexor/flexor, Hoffmann R/L: -/-, Jaw jerk: -
+
+Motor status:
+ Brunnstrom's stage:
+ Spasticity(Modified Ashworth Scale):
+
+*Sensory:
+Small fiber: no apparent hypesthesia or dysesthesia noted
+ Pinprick: intact
+ Light touch: intact
+ Temperature: intact
+Large fiber:
+ Joint position test R/L:
+ Romberg's test(-)
+
+*Cerebellum/coordination:
+1. Finger nose finger: dysmetria(-)
+2. Heel-knee-shin maneuver: dysmetria(-)
+3. Rapid alternative movement: dysdiadochokinesia(-)
+4. Truncal titubation(-)
+5. Tandem gait: fair
+
+*Extrapyramidal system:
+1. Mask face(-), decreased arm swing(-)
+2. Tremor: resting(-), action(-), posture(-)
+3. Rigidity(-) : cogwheel(-), truncal(-)
+4. Bradykinesia(-)
+5. Postural instability(-)
+6. Gait: Initiation difficulty(-), freezing(-), shuffling(-), en bloc turning(-), Festination(-)`;
+
   const state = {
     db: null,
     patients: [],
@@ -49,6 +127,7 @@
     lab: $("labInput"),
     recentStatus: $("recentStatusInput"),
     labSummary: $("labSummaryInput"),
+    neuro: $("neuroInput"),
     output: $("summaryOutput"),
     sourceText: $("sourceTextInput"),
     pdfInput: $("pdfInput"),
@@ -126,6 +205,7 @@
       recentStatus: "",
       sourceText: "",
       summary: "",
+      neuro: NEURO_TEMPLATE,
       pdf: null,
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -168,6 +248,7 @@
       recentStatus: els.recentStatus.value,
       sourceText: els.sourceText.value,
       summary: els.output.value,
+      neuro: els.neuro.value,
       updatedAt: Date.now()
     };
   }
@@ -214,6 +295,7 @@
     els.recentStatus.value = patient.recentStatus || "";
     els.sourceText.value = patient.sourceText || "";
     els.output.value = patient.summary || "";
+    els.neuro.value = patient.neuro ?? NEURO_TEMPLATE;
     state.current.selections ||= { complaint: {}, pe: {} };
     state.current.selections.complaint ||= {};
     state.current.selections.pe ||= {};
@@ -678,6 +760,18 @@
     $("saveSettingsBtn").addEventListener("click", saveSettings);
     $("saveCloudBtn").addEventListener("click", saveCloudSettings);
     els.uploadBtn.addEventListener("click", uploadToCloud);
+    $("neResetBtn").addEventListener("click", () => {
+      if (els.neuro.value.trim() && els.neuro.value !== NEURO_TEMPLATE
+        && !confirm("將覆蓋目前 NE 內容，重設為預設模板？")) return;
+      els.neuro.value = NEURO_TEMPLATE;
+      markDirty();
+      showToast("已重設為預設神經學檢查模板");
+    });
+    $("neCopyBtn").addEventListener("click", async () => {
+      if (!els.neuro.value.trim()) { showToast("NE 沒有可複製的內容"); return; }
+      await navigator.clipboard.writeText(els.neuro.value);
+      showToast("NE 內容已複製");
+    });
     $("summarizeBtn").addEventListener("click", () => {
       els.output.value = buildSummary();
       markDirty();
