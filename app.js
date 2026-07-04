@@ -19,83 +19,123 @@
     defaults: { complaint: {}, pe: {} }
   };
 
-  const NEURO_TEMPLATE = `8. Neurological examinations
-*Cranial nerve
-CN I :   Not performed, anosmia(-), hyposmia(-), hyperosmia(-), olfactory agnosia(-)
-CN II:   Visual acuity: intact(+), Visual fields: confrontation test: intact
-CN III, IV, VI:
-         Pupil: isocoric R/L: 3mm/3mm, light reflex R/L: +/+
-         EOM:
-          0    0          0    0
-      0 --+----+-- 0  0 --+----+-- 0
-          0    0          0    0
-         Primary gaze: at neutral positions without diplopia; Convergence: fair
-         Binocular diplopia(-)
-         Pursuit: smooth, Saccade: no dysmetria
-CN V:    Corneal reflex(+/+)
-         Facial sensation: intact and symmetric to pinprick and light touch
-         Masseter R/L: full, Temporalis R/L: full
-CN VII : No/Central/Peripheral type facial palsy
-         Nasolabial fold shallowing(-)
-CN VIII: Bilateral hearing ability: fair by finger rubbing test
-         Spontaneous nystagmus(-); positional nystagmus(-)
-CN IX,X: Uvula deviation(-), Gag reflex R/L(+/+)
-CN XI:   SCM: weakness(-), atrophy(-), 5/5
-         Trapezius: weakness(-), atrophy(-), 5/5
-CN XII:  Tongue protruding: deviation(-), atrophy(-), fasciculation(-)
+  const NE_SIGN = ["(-)", "(+)"];
+  const NE_POWER = ["0", "1", "2", "3", "4", "4+", "5"];
+  const NE_DTR = ["0", "trace", "+", "++", "+++", "clonus"];
+  const NE_PUPIL = ["2mm", "2.5mm", "3mm", "3.5mm", "4mm", "5mm", "6mm"];
 
-*Motor
-Motor inspection:
-muscle wasting(-), fasciculation(-), muscle cramps(-), dystonia(-)
+  const NE_PE_NORMAL = {
+    heent: `1. HEENT: grossly normal
+   Eyes: Conjunctivae: pink; Sclerae: anicteric
+   Pupils and EOM: see below (NE part)
+   Neck: supple; no jugular vein engorgement; no palpable lymph node; no goiter; no carotid bruit`,
+    chest: `2. Chest: symmetric expansion; clear breath sounds; no crackle, rhonchus, stridor, or wheezing`,
+    heart: `3. Heart: regular heart beats; no apparent heart murmur`,
+    abdomen: `4. Abdomen: flat; normoactive bowel sounds; soft; no tenderness; no rebound tenderness
+   liver/spleen: impalpable`,
+    back: `5. Back: no knocking tenderness at costovertebral angles`,
+    extremities: `6. Extremities: freely movable; no pitting edema; no cyanosis;
+   Pulses: (R/L) radial ++/++; dorsalis pedis ++/++`,
+    skin: `7. Skin: Abnormal pigmentation(-), skin rash(-), Petechiae(-), Purpura(-), Ecchymoses(-)`
+  };
 
-Muscle tone:
-spasticity(-), rigidity(-)
+  const NE_SECTIONS = [
+    { title: "一般 PE（正常/異常）", items: [
+      { t: "seg", id: "heent", lab: "HEENT / Eyes / Neck", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "chest", lab: "Chest", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "heart", lab: "Heart", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "abdomen", lab: "Abdomen", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "back", lab: "Back（CVA knocking）", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "extremities", lab: "Extremities / Pulses", opts: ["正常", "異常"], nz: "正常" },
+      { t: "seg", id: "skin", lab: "Skin", opts: ["正常", "異常"], nz: "正常" }
+    ] },
+    { title: "Cranial Nerve（腦神經）", items: [
+      { t: "seg", id: "cn2_va", lab: "CN II · Visual acuity", opts: ["intact", "impaired"], nz: "intact" },
+      { t: "pcyc", id: "cn3_pupil", lab: "CN III · Pupil size (R/L)", opts: NE_PUPIL, nz: "3mm" },
+      { t: "pseg", id: "cn3_lr", lab: "CN III · Light reflex (R/L)", opts: ["+", "-"], nz: "+" },
+      { t: "seg", id: "cn3_diplopia", lab: "CN III · Binocular diplopia", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "cn5_corneal", lab: "CN V · Corneal reflex", opts: ["+/+", "abnormal"], nz: "+/+" },
+      { t: "seg", id: "cn5_sens", lab: "CN V · Facial sensation", opts: ["intact", "abnormal"], nz: "intact" },
+      { t: "seg", id: "cn7", lab: "CN VII · Facial palsy type", opts: ["No", "Central", "Peripheral"], nz: "No" },
+      { t: "seg", id: "cn8_hear", lab: "CN VIII · Hearing", opts: ["fair", "impaired"], nz: "fair" },
+      { t: "seg", id: "cn8_nyst", lab: "CN VIII · Nystagmus", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "cn910_uvula", lab: "CN IX,X · Uvula deviation", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "cn910_gag", lab: "CN IX,X · Gag reflex", opts: ["+/+", "abnormal"], nz: "+/+" },
+      { t: "seg", id: "cn11", lab: "CN XI · SCM/Trapezius", opts: ["5/5", "weak"], nz: "5/5" },
+      { t: "seg", id: "cn12", lab: "CN XII · Tongue deviation", opts: NE_SIGN, nz: "(-)" }
+    ] },
+    { title: "Motor · Inspection & Tone", items: [
+      { t: "seg", id: "mi_wast", lab: "Muscle wasting", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "mi_fasc", lab: "Fasciculation", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "mi_cramp", lab: "Muscle cramps", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "mi_dyst", lab: "Dystonia", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "tone_spas", lab: "Spasticity", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "tone_rig", lab: "Rigidity", opts: NE_SIGN, nz: "(-)" }
+    ] },
+    { title: "Muscle Power（點一下換級・預設 5）", items: [
+      { t: "pcyc", id: "mp_sh", lab: "Shoulder", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_elbF", lab: "Elbow flexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_elbE", lab: "Elbow extension", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_wrF", lab: "Wrist flexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_wrE", lab: "Wrist extension", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_grasp", lab: "Grasp", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_hip", lab: "Hip flexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_kneeF", lab: "Knee flexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_kneeE", lab: "Knee extension", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_ankD", lab: "Ankle dorsiflexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_ankP", lab: "Ankle plantarflexion", opts: NE_POWER, nz: "5" },
+      { t: "pcyc", id: "mp_toe", lab: "Big toe", opts: NE_POWER, nz: "5" }
+    ] },
+    { title: "DTR（深部肌腱反射・點一下換級）", items: [
+      { t: "pcyc", id: "dtr_biceps", lab: "Biceps", opts: NE_DTR, nz: "++" },
+      { t: "pcyc", id: "dtr_triceps", lab: "Triceps", opts: NE_DTR, nz: "++" },
+      { t: "pcyc", id: "dtr_brachio", lab: "Brachioradialis", opts: NE_DTR, nz: "+" },
+      { t: "pcyc", id: "dtr_knee", lab: "Knee", opts: NE_DTR, nz: "++" },
+      { t: "pcyc", id: "dtr_ankle", lab: "Ankle", opts: NE_DTR, nz: "trace" }
+    ] },
+    { title: "Reflexes & Soft Signs", items: [
+      { t: "pseg", id: "pron", lab: "Pronator drift (R/L)", opts: NE_SIGN, nz: "(-)" },
+      { t: "pseg", id: "babinski", lab: "Babinski (R/L)", opts: ["flexor", "extensor"], nz: "flexor" },
+      { t: "pseg", id: "hoffmann", lab: "Hoffmann (R/L)", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "jaw", lab: "Jaw jerk", opts: NE_SIGN, nz: "(-)" }
+    ] },
+    { title: "Sensory", items: [
+      { t: "seg", id: "s_pin", lab: "Pinprick", opts: ["intact", "abnormal"], nz: "intact" },
+      { t: "seg", id: "s_light", lab: "Light touch", opts: ["intact", "abnormal"], nz: "intact" },
+      { t: "seg", id: "s_temp", lab: "Temperature", opts: ["intact", "abnormal"], nz: "intact" },
+      { t: "seg", id: "s_romberg", lab: "Romberg's test", opts: NE_SIGN, nz: "(-)" }
+    ] },
+    { title: "Cerebellum / Coordination", items: [
+      { t: "seg", id: "c_fnf", lab: "Finger-nose-finger dysmetria", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "c_hks", lab: "Heel-knee-shin dysmetria", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "c_ram", lab: "RAM dysdiadochokinesia", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "c_trunc", lab: "Truncal titubation", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "c_tandem", lab: "Tandem gait", opts: ["normal", "fair", "unable"], nz: "normal" }
+    ] },
+    { title: "Extrapyramidal System", items: [
+      { t: "seg", id: "e_mask", lab: "Mask face", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_arm", lab: "Decreased arm swing", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_tremR", lab: "Resting tremor", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_tremA", lab: "Action tremor", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_tremP", lab: "Postural tremor", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_rigid", lab: "Rigidity (cogwheel/truncal)", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_brady", lab: "Bradykinesia", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_post", lab: "Postural instability", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "e_gait", lab: "Gait abnormality", opts: ["正常", "異常"], nz: "正常" }
+    ] },
+    { title: "Autonomic Nervous System", items: [
+      { t: "seg", id: "a_urine", lab: "Urinary incontinence", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_stool", lab: "Stool incontinence", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_dizzy", lab: "Postural dizziness", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_ortho", lab: "Orthostatic hypotension", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_palp", lab: "Palpitation", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_sweatH", lab: "Excessive sweating", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_sweatL", lab: "Less sweating", opts: NE_SIGN, nz: "(-)" },
+      { t: "seg", id: "a_3bp", lab: "3-phase BP（列入空白表格待填）", opts: ["不列入", "列入"], nz: "不列入" }
+    ] }
+  ];
 
-Muscle power:(R/L)
-Upper limbs
- Right: shoulder 5   elbow flexion/extension  5/5     wrist flexion/extension   5/5    grasp 5
- Left:  shoulder 5    elbow flexion/extension 5/5       wrist flexion/extension 5/5    grasp 5
-Lower limbs
- Right: hip flexion 5 knee flexion/extension 5/5
- ankle dorsiflextion/plantarflextion 5/3 big toe 3
- Left:  hip flexion 5  knee flexion/extension 5/5
- ankle dorsiflextion/plantarflextion 5/3 big toe 2
-
-DTR
-  Right: biceps: ++, triceps: ++, brachioradialis: +, knee: ++, ankle: trace
-  Left:  biceps: ++, triceps: ++, brachioradialis: +, knee: ++, ankle: trace
-Soft weakness sign: pronator drift test: L/R: -/-
-
-Other reflexes: (R/L)
-Barbinski: flexor/flexor, Hoffmann R/L: -/-, Jaw jerk: -
-
-Motor status:
- Brunnstrom's stage:
- Spasticity(Modified Ashworth Scale):
-
-*Sensory:
-Small fiber: no apparent hypesthesia or dysesthesia noted
- Pinprick: intact
- Light touch: intact
- Temperature: intact
-Large fiber:
- Joint position test R/L:
- Romberg's test(-)
-
-*Cerebellum/coordination:
-1. Finger nose finger: dysmetria(-)
-2. Heel-knee-shin maneuver: dysmetria(-)
-3. Rapid alternative movement: dysdiadochokinesia(-)
-4. Truncal titubation(-)
-5. Tandem gait: fair
-
-*Extrapyramidal system:
-1. Mask face(-), decreased arm swing(-)
-2. Tremor: resting(-), action(-), posture(-)
-3. Rigidity(-) : cogwheel(-), truncal(-)
-4. Bradykinesia(-)
-5. Postural instability(-)
-6. Gait: Initiation difficulty(-), freezing(-), shuffling(-), en bloc turning(-), Festination(-)`;
+  let neState = {};
 
   const state = {
     db: null,
@@ -127,7 +167,8 @@ Large fiber:
     lab: $("labInput"),
     recentStatus: $("recentStatusInput"),
     labSummary: $("labSummaryInput"),
-    neuro: $("neuroInput"),
+    neApp: $("neApp"),
+    nePreview: $("nePreview"),
     output: $("summaryOutput"),
     sourceText: $("sourceTextInput"),
     pdfInput: $("pdfInput"),
@@ -205,7 +246,7 @@ Large fiber:
       recentStatus: "",
       sourceText: "",
       summary: "",
-      neuro: NEURO_TEMPLATE,
+      neuro: {},
       pdf: null,
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -248,7 +289,7 @@ Large fiber:
       recentStatus: els.recentStatus.value,
       sourceText: els.sourceText.value,
       summary: els.output.value,
-      neuro: els.neuro.value,
+      neuro: structuredClone(neState),
       updatedAt: Date.now()
     };
   }
@@ -295,7 +336,9 @@ Large fiber:
     els.recentStatus.value = patient.recentStatus || "";
     els.sourceText.value = patient.sourceText || "";
     els.output.value = patient.summary || "";
-    els.neuro.value = patient.neuro ?? NEURO_TEMPLATE;
+    neState = (patient.neuro && typeof patient.neuro === "object") ? structuredClone(patient.neuro) : {};
+    neBuildUI();
+    neRender();
     state.current.selections ||= { complaint: {}, pe: {} };
     state.current.selections.complaint ||= {};
     state.current.selections.pe ||= {};
@@ -412,6 +455,194 @@ Large fiber:
       container.appendChild(row);
     });
     state.defaultDraft[kind] = retained;
+  }
+
+  function neEl(tag, cls, txt) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (txt != null) node.textContent = txt;
+    return node;
+  }
+
+  function nePaintSeg(wrap, id, nz) {
+    [...wrap.children].forEach((button) => {
+      button.classList.remove("sel-normal", "sel-warn");
+      if (button.dataset.v === neState[id]) button.classList.add(neState[id] === nz ? "sel-normal" : "sel-warn");
+    });
+  }
+
+  function neSegControl(id, opts, nz) {
+    if (!(id in neState)) neState[id] = nz;
+    const wrap = neEl("div", "ne-opts");
+    opts.forEach((option) => {
+      const button = neEl("button", "ne-opt", option);
+      button.type = "button";
+      button.dataset.v = option;
+      button.addEventListener("click", () => {
+        neState[id] = option;
+        nePaintSeg(wrap, id, nz);
+        neRender();
+        markDirty();
+      });
+      wrap.appendChild(button);
+    });
+    nePaintSeg(wrap, id, nz);
+    return wrap;
+  }
+
+  function neCycControl(id, opts, nz) {
+    if (!(id in neState)) neState[id] = nz;
+    const wrap = neEl("div", "ne-cycwrap");
+    const button = neEl("button", "ne-opt ne-cyc");
+    button.type = "button";
+    const update = () => {
+      button.textContent = neState[id];
+      button.classList.toggle("normal", neState[id] === nz);
+      button.classList.toggle("warn", neState[id] !== nz);
+    };
+    button.addEventListener("click", () => {
+      const index = opts.indexOf(neState[id]);
+      neState[id] = opts[(index + 1) % opts.length];
+      update();
+      neRender();
+      markDirty();
+    });
+    wrap.appendChild(button);
+    update();
+    return wrap;
+  }
+
+  function neBuildRow(item) {
+    const row = neEl("div", "ne-row");
+    const label = neEl("div", "ne-lab");
+    label.innerHTML = `<b>${item.lab}</b>`;
+    row.appendChild(label);
+    if (item.t === "seg") {
+      row.appendChild(neSegControl(item.id, item.opts, item.nz));
+    } else if (item.t === "pseg" || item.t === "pcyc") {
+      const pair = neEl("div", "ne-pair");
+      ["R", "L"].forEach((side) => {
+        const box = neEl("div", "ne-side");
+        box.appendChild(neEl("div", "ne-sl", side));
+        const control = item.t === "pseg"
+          ? neSegControl(`${item.id}_${side}`, item.opts, item.nz)
+          : neCycControl(`${item.id}_${side}`, item.opts, item.nz);
+        box.appendChild(control);
+        pair.appendChild(box);
+      });
+      row.appendChild(pair);
+    }
+    return row;
+  }
+
+  function neBuildUI() {
+    els.neApp.replaceChildren();
+    NE_SECTIONS.forEach((section) => {
+      els.neApp.appendChild(neEl("h3", "ne-sec", section.title));
+      const group = neEl("div", "ne-grp");
+      section.items.forEach((item) => group.appendChild(neBuildRow(item)));
+      els.neApp.appendChild(group);
+    });
+  }
+
+  function neBuildNote() {
+    const v = (id) => neState[id];
+    const peLine = (id, key) => v(id) === "正常"
+      ? NE_PE_NORMAL[key]
+      : NE_PE_NORMAL[key].split("\n")[0].replace(/:.*/, ": *** ABNORMAL — 請於電腦補述");
+    const L = [];
+    L.push("身體診察(Physical Examination)");
+    L.push(peLine("heent", "heent"));
+    L.push(peLine("chest", "chest"));
+    L.push(peLine("heart", "heart"));
+    L.push(peLine("abdomen", "abdomen"));
+    L.push(peLine("back", "back"));
+    L.push(peLine("extremities", "extremities"));
+    L.push(peLine("skin", "skin"));
+    L.push("8. Neurological examinations");
+    L.push("*Cranial nerve");
+    L.push("CN I :   Not performed, anosmia(-), hyposmia(-), hyperosmia(-), olfactory agnosia(-)");
+    L.push("CN II:   Visual acuity: " + v("cn2_va") + ", Visual fields: confrontation test: intact");
+    L.push("CN III, IV, VI:");
+    L.push("         Pupil: isocoric R/L: " + v("cn3_pupil_R") + "/" + v("cn3_pupil_L") + ", light reflex R/L: " + v("cn3_lr_R") + "/" + v("cn3_lr_L"));
+    L.push("         EOM:");
+    L.push("          0    0          0    0");
+    L.push("      0 --+----+-- 0  0 --+----+-- 0");
+    L.push("          0    0          0    0");
+    L.push("         Primary gaze: at neutral positions without diplopia; Convergence: fair");
+    L.push("         Binocular diplopia" + v("cn3_diplopia"));
+    L.push("         Pursuit: smooth, Saccade: no dysmetria");
+    L.push("CN V:    Corneal reflex(" + v("cn5_corneal") + ")");
+    L.push("         Facial sensation: " + (v("cn5_sens") === "intact" ? "intact and symmetric to pinprick and light touch" : "*** abnormal — 請補述"));
+    L.push("         Masseter R/L: full, Temporalis R/L: full");
+    L.push("CN VII : " + v("cn7") + " type facial palsy");
+    L.push("         Nasolabial fold shallowing(-)");
+    L.push("CN VIII: Bilateral hearing ability: " + v("cn8_hear") + " by finger rubbing test");
+    L.push("         Spontaneous nystagmus" + v("cn8_nyst") + "; positional nystagmus" + v("cn8_nyst"));
+    L.push("CN IX,X: Uvula deviation" + v("cn910_uvula") + ", Gag reflex R/L(" + v("cn910_gag") + ")");
+    L.push("CN XI:   SCM: weakness(-), atrophy(-), " + v("cn11"));
+    L.push("         Trapezius: weakness(-), atrophy(-), " + v("cn11"));
+    L.push("CN XII:  Tongue protruding: deviation" + v("cn12") + ", atrophy(-), fasciculation(-)");
+    L.push("*Motor");
+    L.push("Motor inspection: ");
+    L.push("muscle wasting" + v("mi_wast") + ", fasciculation" + v("mi_fasc") + ", muscle cramps" + v("mi_cramp") + ", dystonia" + v("mi_dyst"));
+    L.push("Muscle tone:");
+    L.push("spasticity" + v("tone_spas") + ", rigidity" + v("tone_rig"));
+    L.push("Muscle power:(R/L)");
+    L.push("Upper limbs");
+    L.push(" Right: shoulder " + v("mp_sh_R") + "   elbow flexion/extension " + v("mp_elbF_R") + "/" + v("mp_elbE_R") + "   wrist flexion/extension " + v("mp_wrF_R") + "/" + v("mp_wrE_R") + "   grasp " + v("mp_grasp_R"));
+    L.push(" Left:  shoulder " + v("mp_sh_L") + "   elbow flexion/extension " + v("mp_elbF_L") + "/" + v("mp_elbE_L") + "   wrist flexion/extension " + v("mp_wrF_L") + "/" + v("mp_wrE_L") + "   grasp " + v("mp_grasp_L"));
+    L.push("Lower limbs");
+    L.push(" Right: hip flexion " + v("mp_hip_R") + " knee flexion/extension " + v("mp_kneeF_R") + "/" + v("mp_kneeE_R"));
+    L.push(" ankle dorsiflextion/plantarflextion " + v("mp_ankD_R") + "/" + v("mp_ankP_R") + " big toe " + v("mp_toe_R"));
+    L.push(" Left:  hip flexion " + v("mp_hip_L") + " knee flexion/extension " + v("mp_kneeF_L") + "/" + v("mp_kneeE_L"));
+    L.push(" ankle dorsiflextion/plantarflextion " + v("mp_ankD_L") + "/" + v("mp_ankP_L") + " big toe " + v("mp_toe_L"));
+    L.push("DTR");
+    L.push("  Right: biceps: " + v("dtr_biceps_R") + ", triceps: " + v("dtr_triceps_R") + ", brachioradialis: " + v("dtr_brachio_R") + ", knee: " + v("dtr_knee_R") + ", ankle: " + v("dtr_ankle_R"));
+    L.push("  Left:  biceps: " + v("dtr_biceps_L") + ", triceps: " + v("dtr_triceps_L") + ", brachioradialis: " + v("dtr_brachio_L") + ", knee: " + v("dtr_knee_L") + ", ankle: " + v("dtr_ankle_L"));
+    L.push("Soft weakness sign: pronator drift test: R/L: " + v("pron_R") + "/" + v("pron_L"));
+    L.push("Other reflexes: (R/L)");
+    L.push("Barbinski: " + v("babinski_R") + "/" + v("babinski_L") + ", Hoffmann R/L: " + v("hoffmann_R") + "/" + v("hoffmann_L") + ", Jaw jerk: " + (v("jaw") === "(-)" ? "-" : "+"));
+    L.push("Motor status:");
+    L.push(" Brunnstrom's stage: ");
+    L.push(" Spasticity(Modified Ashworth Scale):");
+    L.push("*Sensory: ");
+    L.push("Small fiber: no apparent hypesthesia or dysesthesia noted");
+    L.push(" Pinprick: " + v("s_pin"));
+    L.push(" Light touch: " + v("s_light"));
+    L.push(" Temperature: " + v("s_temp"));
+    L.push("Large fiber:");
+    L.push(" Joint position test R/L: ");
+    L.push(" Romberg's test" + v("s_romberg"));
+    L.push("*Cerebellum/coordination:");
+    L.push("1. Finger nose finger: dysmetria" + v("c_fnf"));
+    L.push("2. Heel-knee-shin maneuver: dysmetria" + v("c_hks"));
+    L.push("3. Rapid alternative movement: dysdiadochokinesia" + v("c_ram"));
+    L.push("4. Truncal titubation" + v("c_trunc"));
+    L.push("5. Tandem gait: " + v("c_tandem"));
+    L.push("*Extrapyramidal system:");
+    L.push("1. Mask face" + v("e_mask") + ", decreased arm swing" + v("e_arm"));
+    L.push("2. Tremor: resting" + v("e_tremR") + ", action" + v("e_tremA") + ", posture" + v("e_tremP"));
+    L.push("3. Rigidity" + v("e_rigid") + " : cogwheel" + v("e_rigid") + ", truncal" + v("e_rigid"));
+    L.push("4. Bradykinesia" + v("e_brady"));
+    L.push("5. Postural instability" + v("e_post"));
+    const gait = v("e_gait") === "正常" ? "(-)" : "(+)";
+    L.push("6. Gait: Initiation difficulty" + gait + ", freezing" + gait + ", shuffling" + gait + ", en bloc turning" + gait + ", Festination" + gait);
+    L.push("*Autonomic nervous system:");
+    L.push("1. Sphincters: urinary incontinence" + v("a_urine") + "; stool incontinence" + v("a_stool"));
+    L.push("2. Postural dizziness" + v("a_dizzy") + ", orthostatic hypotension" + v("a_ortho") + ";  ");
+    L.push("   palpitation" + v("a_palp") + "; excessive sweating" + v("a_sweatH") + ", less sweating" + v("a_sweatL"));
+    if (v("a_3bp") === "列入") {
+      L.push("3. 3 Phases BP:");
+      L.push("   Lying: /()");
+      L.push("   Sitting: 1min /(), 5min /()");
+      L.push("   Standing: 1min /(), 5min /()");
+    }
+    return L.join("\n");
+  }
+
+  function neRender() {
+    els.nePreview.textContent = neBuildNote();
   }
 
   function checklistText(kind) {
@@ -761,16 +992,16 @@ Large fiber:
     $("saveCloudBtn").addEventListener("click", saveCloudSettings);
     els.uploadBtn.addEventListener("click", uploadToCloud);
     $("neResetBtn").addEventListener("click", () => {
-      if (els.neuro.value.trim() && els.neuro.value !== NEURO_TEMPLATE
-        && !confirm("將覆蓋目前 NE 內容，重設為預設模板？")) return;
-      els.neuro.value = NEURO_TEMPLATE;
+      if (!confirm("將所有神經學檢查重設為正常預設？")) return;
+      neState = {};
+      neBuildUI();
+      neRender();
       markDirty();
-      showToast("已重設為預設神經學檢查模板");
+      showToast("已重設為全部正常");
     });
     $("neCopyBtn").addEventListener("click", async () => {
-      if (!els.neuro.value.trim()) { showToast("NE 沒有可複製的內容"); return; }
-      await navigator.clipboard.writeText(els.neuro.value);
-      showToast("NE 內容已複製");
+      await navigator.clipboard.writeText(neBuildNote());
+      showToast("神經學檢查病歷已複製");
     });
     $("summarizeBtn").addEventListener("click", () => {
       els.output.value = buildSummary();

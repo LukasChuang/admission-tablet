@@ -175,13 +175,51 @@ input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
 
 .form-card, .result-card { display: grid; gap: 14px; margin-top: 14px; }
 #summaryOutput { min-height: 210px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.neuro-input {
-  min-height: 640px;
+.ne-sec {
+  margin: 18px 2px 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+}
+.ne-grp { padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdfd; }
+.ne-row { padding: 9px 2px; border-bottom: 1px dashed var(--line); }
+.ne-row:last-child { border-bottom: 0; }
+.ne-lab { margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.ne-lab b { color: var(--text); font-weight: 700; }
+.ne-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ne-pair { display: flex; gap: 10px; }
+.ne-pair .ne-side { flex: 1; min-width: 0; }
+.ne-side .ne-sl { margin-bottom: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
+button.ne-opt {
+  min-width: 48px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 700;
+}
+button.ne-opt.sel-normal { border-color: #1f8a4c; background: #1f8a4c; color: #fff; }
+button.ne-opt.sel-warn { border-color: var(--danger); background: var(--danger); color: #fff; }
+button.ne-cyc { width: 100%; text-align: center; }
+button.ne-cyc.normal { border-color: #1f8a4c; background: #1f8a4c; color: #fff; }
+button.ne-cyc.warn { border-color: var(--danger); background: var(--danger); color: #fff; }
+.ne-cycwrap { display: flex; }
+.ne-prev { margin-top: 14px; }
+.ne-prev summary { cursor: pointer; padding: 6px 0; color: var(--muted); font-size: 13px; }
+.ne-preview {
+  margin: 6px 0 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  white-space: pre-wrap;
+  word-break: break-word;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre;
-  overflow-wrap: normal;
+  font-size: 12px;
 }
 .hint { color: var(--muted); font-size: 13px; }
 

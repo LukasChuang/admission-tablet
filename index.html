@@ -128,14 +128,18 @@
       <section id="nePanel" class="tab-panel">
         <div class="form-card">
           <div class="section-title">
-            <span>Neurological examinations</span>
+            <span>神經學檢查（按鈕式）</span>
             <div class="inline-actions">
-              <button id="neResetBtn">重設為預設模板</button>
-              <button id="neCopyBtn" class="primary">複製 NE</button>
+              <button id="neResetBtn">重設</button>
+              <button id="neCopyBtn" class="primary">複製病歷</button>
             </div>
           </div>
-          <p class="hint">預設帶入常規神經學檢查模板，直接在下方修改數值即可。內容會隨每位病人一起儲存在此裝置。</p>
-          <textarea id="neuroInput" class="neuro-input" rows="42" spellcheck="false"></textarea>
+          <p class="hint">預設全部正常（綠色）。點按標記異常項；肌力／反射點一下換下一級。做完按「複製病歷」，內容也會隨每位病人一起儲存。</p>
+          <div id="neApp" class="ne-app"></div>
+          <details class="ne-prev">
+            <summary>▸ 預覽輸出文字</summary>
+            <pre id="nePreview" class="ne-preview"></pre>
+          </details>
         </div>
       </section>
 
