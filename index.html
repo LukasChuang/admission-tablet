@@ -131,6 +131,7 @@
             <span>神經學檢查（按鈕式）</span>
             <div class="inline-actions">
               <button id="neResetBtn">重設</button>
+              <button id="neSendBtn">傳送到網頁</button>
               <button id="neCopyBtn" class="primary">複製病歷</button>
             </div>
           </div>
@@ -170,6 +171,16 @@
           <p class="hint">填入你自己的 Google OAuth 用戶端 ID 後，「資訊統整」分頁的「上傳雲端」就能把統整文字存到你 Google Drive 的指定資料夾。資料只會傳到你的 Google 帳號，不會經過其他伺服器；上傳需連線。</p>
           <label>Google OAuth Client ID<input id="cloudClientIdInput" autocomplete="off" placeholder="xxxxxxxxxx.apps.googleusercontent.com"></label>
           <label>目標資料夾名稱<input id="cloudFolderInput" autocomplete="off" placeholder="Admission Summary"></label>
+        </div>
+
+        <div class="settings-card">
+          <div class="section-title">
+            <span>傳送到網頁設定</span>
+            <button id="saveWebBtn" class="primary">儲存設定</button>
+          </div>
+          <p class="hint">填入你的 Google Apps Script 網頁應用程式網址後，NE 分頁的「傳送到網頁」就會把病歷文字送到那個網址，顯示頁只保留最新一筆。網址請保密；傳送需連線，資料會經過網路。</p>
+          <label>接收網址（Apps Script Web App URL）<input id="webUrlInput" autocomplete="off" inputmode="url" placeholder="https://script.google.com/macros/s/xxxxx/exec"></label>
+          <label>驗證金鑰（選填，需與 Apps Script 內設定相同）<input id="webTokenInput" autocomplete="off" placeholder="留空表示不驗證"></label>
         </div>
       </section>
     </section>

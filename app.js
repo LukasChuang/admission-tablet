@@ -143,6 +143,7 @@
     current: null,
     settings: structuredClone(DEFAULT_SETTINGS),
     cloud: { clientId: "", folderName: "Admission Summary" },
+    web: { url: "", token: "" },
     defaultDraft: { complaint: {}, pe: {} },
     dirty: false,
     pdfUrl: ""
@@ -181,6 +182,8 @@
     peDefaults: $("peDefaultsEditor"),
     cloudClientId: $("cloudClientIdInput"),
     cloudFolder: $("cloudFolderInput"),
+    webUrl: $("webUrlInput"),
+    webToken: $("webTokenInput"),
     uploadBtn: $("uploadBtn"),
     saveState: $("saveState"),
     toast: $("toast")
@@ -222,6 +225,10 @@
   const getCloud = () => dbRequest(SETTINGS_STORE, "readonly", (store) => store.get("cloud"));
   const putCloud = (cloud) => dbRequest(
     SETTINGS_STORE, "readwrite", (store) => store.put({ key: "cloud", value: cloud })
+  );
+  const getWeb = () => dbRequest(SETTINGS_STORE, "readonly", (store) => store.get("web"));
+  const putWeb = (web) => dbRequest(
+    SETTINGS_STORE, "readwrite", (store) => store.put({ key: "web", value: web })
   );
 
   function newId() {
@@ -863,6 +870,54 @@
     showToast("雲端設定已儲存在此裝置");
   }
 
+  function renderWeb() {
+    els.webUrl.value = state.web.url || "";
+    els.webToken.value = state.web.token || "";
+  }
+
+  async function saveWebSettings() {
+    state.web = {
+      url: els.webUrl.value.trim(),
+      token: els.webToken.value.trim()
+    };
+    await putWeb(state.web);
+    showToast("傳送到網頁設定已儲存在此裝置");
+  }
+
+  async function sendToWeb() {
+    if (!state.web.url) {
+      showToast("請先到「項目設定」填入接收網址");
+      return;
+    }
+    if (!navigator.onLine) { showToast("目前離線，連線後才能傳送"); return; }
+    const payload = {
+      token: state.web.token || "",
+      text: neBuildNote(),
+      bed: els.bed.value.trim(),
+      name: els.name.value.trim(),
+      mrn: els.mrn.value.trim(),
+      timestamp: new Date().toISOString()
+    };
+    const button = $("neSendBtn");
+    const previousLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "傳送中…";
+    try {
+      await fetch(state.web.url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      showToast("已傳送到網頁（顯示頁重新整理即可看到）");
+    } catch (error) {
+      showToast(`傳送失敗：${error.message}`);
+    } finally {
+      button.disabled = false;
+      button.textContent = previousLabel;
+    }
+  }
+
   function loadGoogleIdentity() {
     if (window.google?.accounts?.oauth2) return Promise.resolve();
     if (gisLoadPromise) return gisLoadPromise;
@@ -990,6 +1045,8 @@
     $("savePatientBtn").addEventListener("click", saveCurrent);
     $("saveSettingsBtn").addEventListener("click", saveSettings);
     $("saveCloudBtn").addEventListener("click", saveCloudSettings);
+    $("saveWebBtn").addEventListener("click", saveWebSettings);
+    $("neSendBtn").addEventListener("click", sendToWeb);
     els.uploadBtn.addEventListener("click", uploadToCloud);
     $("neResetBtn").addEventListener("click", () => {
       if (!confirm("將所有神經學檢查重設為正常預設？")) return;
@@ -1050,7 +1107,7 @@
       event.target.value = "";
     });
     document.querySelectorAll("input, textarea").forEach((element) => {
-      if ([els.patientSearch, els.pdfInput, els.complaintEditor, els.peEditor, els.cloudClientId, els.cloudFolder, $("importInput")].includes(element)) return;
+      if ([els.patientSearch, els.pdfInput, els.complaintEditor, els.peEditor, els.cloudClientId, els.cloudFolder, els.webUrl, els.webToken, $("importInput")].includes(element)) return;
       element.addEventListener("input", markDirty);
     });
     window.addEventListener("beforeunload", (event) => {
@@ -1066,9 +1123,12 @@
     if (savedSettings?.value) state.settings = savedSettings.value;
     const savedCloud = await getCloud();
     if (savedCloud?.value) state.cloud = { ...state.cloud, ...savedCloud.value };
+    const savedWeb = await getWeb();
+    if (savedWeb?.value) state.web = { ...state.web, ...savedWeb.value };
     state.patients = await getAllPatients();
     renderSettings();
     renderCloud();
+    renderWeb();
     bindEvents();
     if (state.patients.length) {
       loadPatient([...state.patients].sort((a, b) => b.updatedAt - a.updatedAt)[0]);
