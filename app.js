@@ -902,17 +902,21 @@
     const previousLabel = button.textContent;
     button.disabled = true;
     button.textContent = "傳送中…";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
       await fetch(state.web.url, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
       showToast("已傳送到網頁（顯示頁重新整理即可看到）");
     } catch (error) {
-      showToast(`傳送失敗：${error.message}`);
+      showToast(error.name === "AbortError" ? "傳送逾時，請檢查網路後再按一次" : `傳送失敗：${error.message}`);
     } finally {
+      clearTimeout(timeout);
       button.disabled = false;
       button.textContent = previousLabel;
     }
