@@ -1,4 +1,4 @@
-const CACHE_NAME = "last-admission-offline-v6";
+const CACHE_NAME = "last-admission-offline-v7";
 const APP_SHELL = [
   "./",
   "./index.html",

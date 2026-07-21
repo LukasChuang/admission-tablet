@@ -184,13 +184,15 @@ input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
   padding-left: 8px;
 }
 .ne-grp { padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdfd; }
-.ne-row { padding: 9px 2px; border-bottom: 1px dashed var(--line); }
+/* 每列改成「標籤左、按鈕右」單行排版；螢幕太窄放不下時按鈕自動換到下一行。
+   循環鈕（瞳孔/肌力/DTR）寬度封頂，不再整條撐滿螢幕。 */
+.ne-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 7px 2px; border-bottom: 1px dashed var(--line); }
 .ne-row:last-child { border-bottom: 0; }
-.ne-lab { margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.ne-lab { margin-bottom: 0; flex: 1 1 80px; color: var(--muted); font-size: 13px; font-weight: 700; }
 .ne-lab b { color: var(--text); font-weight: 700; }
-.ne-opts { display: flex; flex-wrap: wrap; gap: 6px; }
-.ne-pair { display: flex; gap: 10px; }
-.ne-pair .ne-side { flex: 1; min-width: 0; }
+.ne-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ne-pair { display: flex; gap: 8px; flex: 0 0 auto; margin-left: auto; }
+.ne-pair .ne-side { flex: 0 0 auto; width: 88px; }
 .ne-side .ne-sl { margin-bottom: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
 button.ne-opt {
   min-width: 48px;
