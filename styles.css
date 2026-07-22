@@ -48,6 +48,8 @@ button.danger-text { min-height: 36px; padding: 5px 10px; color: var(--danger); 
   position: sticky;
   top: 0;
   z-index: 5;
+  max-width: 600px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -72,10 +74,11 @@ h1 { margin: 0; font-size: 21px; }
 .privacy-badge span { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
 .header-actions, .inline-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+/* 全 app 統一窄版單欄（與 NE 區同寬）：手機寬視窗渲染下所有欄位/按鈕不再被拉寬 */
 .app-shell {
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
-  max-width: 1500px;
+  grid-template-columns: 1fr;
+  max-width: 600px;
   min-height: calc(100vh - 83px);
   margin: 0 auto;
 }
@@ -83,17 +86,18 @@ h1 { margin: 0; font-size: 21px; }
 .patient-sidebar {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 83px);
-  border-right: 1px solid var(--line);
+  min-height: 0;
+  border-bottom: 1px solid var(--line);
   background: #eef3f4;
 }
 
 .sidebar-head { display: grid; gap: 9px; padding: 16px; }
 .sidebar-head input { width: 100%; }
-.patient-list { display: grid; gap: 8px; padding: 0 12px 14px; overflow: auto; }
+.patient-list { display: flex; gap: 8px; padding: 0 12px 14px; overflow-x: auto; }
 
 .patient-item {
   width: 100%;
+  min-width: 220px;
   min-height: 74px;
   text-align: left;
   background: #fff;
@@ -103,7 +107,7 @@ h1 { margin: 0; font-size: 21px; }
 .patient-item span { margin-top: 4px; color: var(--muted); font-size: 12px; }
 
 .empty-list { padding: 22px 12px; color: var(--muted); text-align: center; font-size: 14px; }
-.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding: 12px; }
+.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 0; padding: 12px; }
 .button-label { display: grid; place-items: center; }
 .button-label input { display: none; }
 
