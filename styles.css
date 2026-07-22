@@ -183,7 +183,9 @@ input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
   border-left: 3px solid var(--accent);
   padding-left: 8px;
 }
-.ne-grp { padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdfd; }
+/* 整組寬度封頂：手機以桌面寬度渲染時，列不會被拉成橫跨整個螢幕 */
+.ne-grp { max-width: 560px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdfd; }
+.ne-sec { max-width: 560px; }
 /* 每列改成「標籤左、按鈕右」單行排版；螢幕太窄放不下時按鈕自動換到下一行。
    循環鈕（瞳孔/肌力/DTR）寬度封頂，不再整條撐滿螢幕。 */
 .ne-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 7px 2px; border-bottom: 1px dashed var(--line); }
