@@ -1141,7 +1141,16 @@
     }
     renderPatientList();
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      // 自動更新：每次開啟都主動檢查新版 SW；新版接管後自動重新載入一次，
+      // 使用者不必再手動「關掉重開兩次」。sessionStorage 旗標防止重載迴圈。
+      navigator.serviceWorker.register("./sw.js")
+        .then((registration) => { registration.update().catch(() => {}); })
+        .catch(() => {});
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem("sw_reloaded")) return;
+        sessionStorage.setItem("sw_reloaded", "1");
+        location.reload();
+      });
     }
   }
 
